@@ -4,7 +4,7 @@
 import motor.motor_asyncio
 from model import Todo
 
-client = motor.motor_asyncio.AsyncIOMotorClient('mongodb+srv://tesless:123@cluster0.xyeyaz7.mongodb.net/')
+client = motor.motor_asyncio.AsyncIOMotorClient('mongodb+srv://dbhyejin:khj238686*@cluster0.gxaaivx.mongodb.net/test')#'mongodb+srv://tesless:123@cluster0.xyeyaz7.mongodb.net/')
 database = client.TodoList
 collection = database.todo
 

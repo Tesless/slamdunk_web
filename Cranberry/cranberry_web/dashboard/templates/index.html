@@ -1,0 +1,83 @@
+<!-- Written 2020-09-20 by whiteknight -->
+
+<!-- https://whiteknight3672.tistory.com -->
+
+
+
+{% load static %}
+
+
+
+<!DOCTYPE html>
+
+<html lang="ko">
+
+
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>Cranberry</title>
+
+    <link rel="stylesheet" href="{% static 'css/cranberry_web.css' %}">
+
+    <!--<script src="{% static 'js/roslibjs/build/roslib.js' %}"></script>-->
+
+    <!--<script src="{% static 'js/script.js' %}"></script> -->
+
+
+
+</head>
+
+
+
+<body>
+
+    <header>
+
+        <div class="app_title">Cranberry</div>
+
+        <nav>
+
+            <ul class="nav__links">
+
+                <li><a href="#">Dashboard</a></li>
+
+                <li><a href="#">Settings</a></li>
+
+                <li><a href="#">About</a></li>
+
+            </ul>
+
+        </nav>
+
+    </header>
+
+    <div class="wrapper">
+
+        <!-- Light Card -->
+
+        <card class="light_card">
+
+            <div class="card_title">Light Control</div>
+
+            <div class="card_content">
+
+                <div class="light_box">
+
+                    <div id="lamp" class="lamp"></div>
+
+                    <div id="label" class="label">living room</div>
+
+                </div>
+
+        </card>
+
+    </div>
+
+</body>
+
+
+
+</html>

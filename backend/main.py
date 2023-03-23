@@ -19,7 +19,8 @@ from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
 
 origins = [
-    "mongodb+srv://tesless:123@cluster0.xyeyaz7.mongodb.net/",
+   # "mongodb+srv://tesless:123@cluster0.xyeyaz7.mongodb.net/",
+  "mongodb+srv://dbhyejin:khj238686*@cluster0.gxaaivx.mongodb.net/test",
 ]
 
 # what is a middleware? 

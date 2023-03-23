@@ -1,0 +1,164 @@
+/*Written 2020-09-20 by whiteknight */
+/*https://whiteknight3672.tistory.com*/
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Roboto', sans-serif;
+}
+
+li,
+a,
+button {
+    font-family: "Montserrat", sans-serif;
+    font-weight: 500;
+    font-size: 16px;
+    color: #fdfdfd;
+    text-decoration: none;
+}
+
+header {
+    /* 태그 이름이 header인 요소에 대해 스타일 적용 */
+    background-color: rgb(146, 170, 169);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 10%;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.5);
+}
+
+.logo {
+    /* 클래스 이름이 logo인 요소에 대해 스타일 적용*/
+    cursor: pointer;
+}
+
+.nav__links {
+    list-style: none;
+}
+
+.nav__links li {
+    display: inline-block;
+    padding: 0px 20px;
+}
+
+.nav__links li a {
+    transition: all 0.3s ease 0s;
+}
+
+.nav__links li a:hover {
+    color: #0088a9;
+}
+
+button {
+    padding: 9px 25px;
+    background-color: #3CAEA3;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease 0s;
+}
+
+body {
+    background: rgb(247, 247, 247);
+    /* color: #555555; */
+    font-size: 14;
+}
+
+.wrapper {
+    padding: 20px;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+card {
+    width: 33.3%;
+    padding: 5px;
+    margin: 10px 10px 10px 10px;
+    height: fit-content;
+    background: #ffffff;
+    /* background: -webkit-linear-gradient(135deg, #fffcdc, #d9a7c7);  /* Chrome 10-25, Safari 5.1-6 */
+    /* background: linear-gradient(135deg, #fffcdc, #d9a7c7); W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+    box-shadow: 0 3px 6px 0 rgba(0, 0, 0, 0.301);
+    border-radius: 10px;
+    /* 5px rounded corners */
+}
+
+.card_title {
+    margin-top: 5px;
+    margin-bottom: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.card_content {
+    display: flex;
+    flex-wrap: wrap;
+    margin-left: auto;
+    margin-right: auto;
+    height: fit-content;
+    width: 100%;
+
+}
+
+.light_box {
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+@media(max-width: 470px) {
+
+    /*반응형 대응을 위한 스타일*/
+    .light_box {
+        width: 50%;
+    }
+}
+
+#lamp {
+    /* id 이름이 logo인 요소에 대해 스타일 적용*/
+    width: 30px;
+    height: 30px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    margin-left: auto;
+    margin-right: auto;
+
+    background-color: rgb(80, 80, 80);
+    box-shadow: 0 0 10px 5px rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    transition: all 0.3s ease-in-out 0s;
+
+}
+
+#lamp:hover {
+    background-color: rgb(255, 230, 0);
+    box-shadow: 0 0 10px 5px rgba(172, 126, 0, 0.781);
+}
+
+#label {
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    height: 100%;
+    margin: 0 auto;
+    font-size: 15px;
+    text-align: center;
+}
+
+
+
+@media (orientation:portrait) {
+
+    .card_content {
+        min-height: 50px;
+    }
+
+}
