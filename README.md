@@ -1,5 +1,7 @@
 #MongoDB 드라이버 추가
 python3 -m pip install 'pymongo[srv]'
+
+
 Ubuntu 메모리 정리 명령어
 쓰레기통 비우는 명령어
 
