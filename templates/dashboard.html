@@ -19,6 +19,7 @@
 <link href="{{ url_for('static', path='/cover/cover.css')}}" rel="stylesheet">
 
     <style>
+
       .bd-placeholder-img {
         font-size: 1.125rem;
         text-anchor: middle;
@@ -161,12 +162,104 @@
   </header>
 
   <main class="px-3">
-    <h1>Cam Monitoring</h1>
-    <tr>
-      <td colspan="2" width="100%">
-        <!-- <img src="{{ url_for('video') }}" width="640" height="480" /> -->
-        <!--div id="videoCanvas" style="display: block;"></div--><br />
-      </td>
+    <div class="container text-center"  data-bs-theme="dark">
+      <div class="row align-items-center">
+        <div class="col-5">
+          <h1>Cam Monitoring</h1>
+          
+          <tr>
+            <img src="{{url_for('static', path='/icon/camera_image.jpeg')}}" class="object-fit-cover border rounded" alt="..." width="640" height="480">
+            <!--<img src="{{ url_for('video') }}" class="object-fit-cover border rounded" alt="..." width="640" height="480">-->
+            <!--<img src="{{ url_for('video') }}" width="640" height="480">
+            <div id="videoCanvas" style="display: block;"></div>-->
+            </td>
+        </div>
+        <div class="col-1">
+        </div>
+        <div class="col-6">
+          <div class="row">
+            <div class="col">
+            </div>
+            <div class="col">
+            </div>
+            <div class="col">
+              <button type="button"class="btn"><img src="{{url_for('static', path='/icon/outline_arrow_circle_up_white_48dp.png')}}" /></bottn>
+            </div>
+            <div class="col">
+            </div>
+            <div class="col">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col">
+            </div>
+            <div class="col">
+              <button type="button"class="btn"><img src="{{url_for('static', path='/icon/outline_arrow_circle_left_white_48dp.png')}}" /></bottn>
+            </div>
+            <div class="col">
+              <button type="button" class="btn"><img src="{{url_for('static', path='/icon/outline_dangerous_white_48dp.png')}}" /></bottn>
+            </div>
+            <div class="col">
+              <button type="button" class="btn"><img src="{{url_for('static', path='/icon/outline_arrow_circle_right_white_48dp.png')}}" /></bottn>
+            </div>
+            <div class="col">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col">
+            </div>
+            <div class="col">
+            </div>
+            <div class="col">
+              <button type="button"class="btn"><img src="{{url_for('static', path='/icon/outline_arrow_circle_down_white_48dp.png')}}" /></bottn>
+            </div>
+            <div class="col">
+            </div>
+            <div class="col">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col">
+              <p></p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col">
+              <p></p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col">
+              <h3>장소 1</h3>
+            </div>
+            <div class="col">
+              <h3>장소 2</h3>
+            </div>
+            <div class="col">
+              <h3>장소 3</h3>
+            </div>
+            <div class="col">
+              <h3>장소 4</h3>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col">
+              <button type="button"class="btn"><img src="{{url_for('static', path='/icon/outline_pin_drop_white_48dp.png')}}" /></bottn>
+            </div>
+            <div class="col">
+              <button type="button"class="btn"><img src="{{url_for('static', path='/icon/outline_pin_drop_white_48dp.png')}}" /></bottn>
+            </div>
+            <div class="col">
+              <button type="button"class="btn"><img src="{{url_for('static', path='/icon/outline_pin_drop_white_48dp.png')}}" /></bottn>
+            </div>
+            <div class="col">
+              <button type="button"class="btn"><img src="{{url_for('static', path='/icon/outline_pin_drop_white_48dp.png')}}" /></bottn>
+            </div>
+          </div>
+        </div>
+
+      </div>
+   
     </tr>
     </p>
   </main>

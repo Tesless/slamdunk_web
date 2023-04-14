@@ -25,6 +25,10 @@ body {
   max-width: 115em;
 }
 
+.div {
+  align-content: center;
+}
+
 
 /*
  * Header
@@ -34,6 +38,7 @@ body {
   color: rgba(255, 255, 255, .5);
   border-bottom: .25rem solid transparent;
 }
+
 
 .nav-masthead .nav-link:hover,
 .nav-masthead .nav-link:focus {
