@@ -1,127 +1,253 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from typing import Union
-from fastapi import FastAPI
-import io
-import json
-from PIL import Image
-from fastapi import File,FastAPI, Response
-import torch
+import asyncio
+import os
 import cv2
-from fastapi import Request
-from fastapi.responses import StreamingResponse
-import json
-import telegram
-import webbrowser
-from datetime import datetime
-import rospy
-import numpy as np
-from cv_bridge import CvBridge, CvBridgeError
-from sensor_msgs.msg import Image
-import threading
 
-app = FastAPI() # Fastapi 실행 app 으로 변수 지정 
-templates = Jinja2Templates(directory="templates") # 템플릿 디렉토리 지정
-app.mount("/static", StaticFiles(directory="static"), name="static") # 파일 저장공간 지정
-bridge = CvBridge() # ?
-cv2_img = np.zeros((480, 640, 3), np.uint8) # cv2_img 화면 크기?
+from av import VideoFrame
 
-# 학습시킨 모델 불러오기 및 경로(yolov5, best.pt(학습데이터))
-model = torch.hub.load('/home/tesless/slamdunk/yolov5/', 'custom','/home/tesless/slamdunk/0403_custom/exp/weights/best.pt', 
-                       source='local', device='cpu', force_reload=True)
+from imageai.Detection import VideoObjectDetection
+
+from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
+from aiortc.contrib.media import MediaPlayer, MediaRelay, MediaBlackhole
+
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+
+from starlette.requests import Request
+from starlette.responses import HTMLResponse
+from starlette.templating import Jinja2Templates
+
+from src.schemas import Offer
+
+ROOT = os.path.dirname(__file__)
+
+app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
+faces = cv2.CascadeClassifier(cv2.data.haarcascades+"haarcascade_frontalface_default.xml")
+eyes = cv2.CascadeClassifier(cv2.data.haarcascades+"haarcascade_eye.xml")
+smiles = cv2.CascadeClassifier(cv2.data.haarcascades+"haarcascade_smile.xml")
 
 
+class VideoTransformTrack(MediaStreamTrack):
+    """
+    A video stream track that transforms frames from an another track.
+    """
 
-# 혜진님 텔레그램 정보
-bot = telegram.Bot(token='6007372301:AAEZWipCHU_oaQV7a1Kh_0Ig-ZARlPHjHjs')
-chat_id =6102779631
+    kind = "video"
 
-@app.get('/',response_class=HTMLResponse) 
-async def read_item(request: Request):  
-	return templates.TemplateResponse("index.html", {"request": request}) 
+    def __init__(self, track, transform):
+        super().__init__()
+        self.track = track
+        self.transform = transform
+
+    async def recv(self):
+        frame = await self.track.recv()
+
+        if self.transform == "cartoon":
+            img = frame.to_ndarray(format="bgr24")
+
+            # prepare color
+            img_color = cv2.pyrDown(cv2.pyrDown(img))
+            for _ in range(6):
+                img_color = cv2.bilateralFilter(img_color, 9, 9, 7)
+            img_color = cv2.pyrUp(cv2.pyrUp(img_color))
+
+            # prepare edges
+            img_edges = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+            img_edges = cv2.adaptiveThreshold(
+                cv2.medianBlur(img_edges, 7),
+                255,
+                cv2.ADAPTIVE_THRESH_MEAN_C,
+                cv2.THRESH_BINARY,
+                9,
+                2,
+            )
+            img_edges = cv2.cvtColor(img_edges, cv2.COLOR_GRAY2RGB)
+
+            # combine color and edges
+            img = cv2.bitwise_and(img_color, img_edges)
+
+            # rebuild a VideoFrame, preserving timing information
+            new_frame = VideoFrame.from_ndarray(img, format="bgr24")
+            new_frame.pts = frame.pts
+            new_frame.time_base = frame.time_base
+            return new_frame
+        elif self.transform == "edges":
+            # perform edge detection
+            img = frame.to_ndarray(format="bgr24")
+            img = cv2.cvtColor(cv2.Canny(img, 100, 200), cv2.COLOR_GRAY2BGR)
+
+            # rebuild a VideoFrame, preserving timing information
+            new_frame = VideoFrame.from_ndarray(img, format="bgr24")
+            new_frame.pts = frame.pts
+            new_frame.time_base = frame.time_base
+            return new_frame
+        elif self.transform == "rotate":
+            # rotate image
+            img = frame.to_ndarray(format="bgr24")
+            rows, cols, _ = img.shape
+            M = cv2.getRotationMatrix2D((cols / 2, rows / 2), frame.time * 45, 1)
+            img = cv2.warpAffine(img, M, (cols, rows))
+
+            # rebuild a VideoFrame, preserving timing information
+            new_frame = VideoFrame.from_ndarray(img, format="bgr24")
+            new_frame.pts = frame.pts
+            new_frame.time_base = frame.time_base
+            return new_frame
+        elif self.transform == "cv":
+            img = frame.to_ndarray(format="bgr24")
+            face = faces.detectMultiScale(img, 1.1, 19)
+            for (x, y, w, h) in face:
+                cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+            eye = eyes.detectMultiScale(img, 1.1, 19)
+            for (x, y, w, h) in eye:
+                cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+            # smile = smiles.detectMultiScale(img, 1.1, 19)
+            # for (x, y, w, h) in smile:
+            #     cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 5), 2)
+
+            new_frame = VideoFrame.from_ndarray(img, format="bgr24")
+            new_frame.pts = frame.pts
+            new_frame.time_base = frame.time_base
+            return new_frame
+        else:
+            return frame
+
+
+def create_local_tracks(play_from=None):
+    if play_from:
+        player = MediaPlayer(play_from)
+        return player.audio, player.video
+    else:
+        options = {"framerate": "30", "video_size": "640x480"}
+        # if relay is None:
+            # if platform.system() == "Darwin":
+            # webcam = MediaPlayer(
+            #     "default:none", format="avfoundation", options=options
+            # )
+            # elif platform.system() == "Windows":
+            # webcam = MediaPlayer("video.mp4")
+        # webcam = MediaPlayer(
+        #     "video=FULL HD 1080P Webcam", format="dshow", options=options
+        # )
+
+
+            # else:
+        webcam = MediaPlayer("/dev/video0", format="v4l2", options=options)
+            # audio, video = VideoTransformTrack(webcam.video, transform="cv")
+        relay = MediaRelay()
+        return None, relay.subscribe(webcam.video)
+
+
+@app.get("/", response_class=HTMLResponse)
+async def index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+
+
+@app.get("/cv", response_class=HTMLResponse)
+async def index(request: Request):
+    return templates.TemplateResponse("index_cv.html", {"request": request})
 
 @app.get("/dashboard", response_class=HTMLResponse)
-def dashboard(request: Request):
+async def dashboard(request: Request):
     return templates.TemplateResponse("dashboard.html",{"request": request})
-async def gen_frames():
-    pre_num_persons = 0 # 이전 비디오에서 발견된 사람 수를 저장할 변수 초기화
-    pre_num_smoke = 0   # 이전 비디오에서 발견된 연기 수를 저장할 변수 초기화
-    pre_num_fire = 0    # 이전 비디오에서 발견된 불 수를 저장할 변수 초기화
-    frame_num = 0       # 이전 비디오 개수 저장할 변수 초기화 
-    #print("SLAMDUNK 경비 순찰 시작합니다")
-    #bot.send_message(chat_id, text="SLAMDUNK 경비 순찰 시작합니다\n")
-    async def print_message(frame_num):
-        message =""
-        nonlocal pre_num_persons, pre_num_fire, pre_num_smoke
-        #if frame_num == 0: # 프레임 번호가 0일때만 "SLAMDUNK 경비 순찰 시작합니다" 메시지 전송
-        #    await bot.send_message(chat_id, text="SLAMDUNK 경비 순찰 시작합니다")
-        if frame_num % 3000 == 0: # 대략적으로 5분에 한번 문자오는듯 ,현재 프레임 번호가 3000 배수일때 문자전송
-            message = "SLAMDUNK 경비 순찰 중 입니다.\n"
-        # 이전 프레임 ,객체의 개수가 바뀌어야만 문자알림 전송, 안그러면 많은 문자가 중복되어 쌓이게 됨,
-        # 같은 객체를 인식하고 반복적으로 문자를 보내는것을 막기위함 
-        if num_persons != pre_num_persons or num_smoke != pre_num_smoke or num_fire != pre_num_fire:
-            if num_persons > 0 and num_persons != pre_num_persons == 0:
-                message += f"사람이 {num_persons}명 확인 되었습니다.\nQR코드를 확인 합니다.\n"
-                # webbrowser.open("https://webqr.com/index.html")
-                pre_num_persons = num_persons
-            if num_smoke > 0 and num_smoke != pre_num_smoke:
-                message += f"연기가 {num_smoke}곳 에서 발견 되었습니다.\n지금 바로 확인 바랍니다\n"
-                pre_num_smoke = num_smoke
-            if num_fire > 0 and num_fire != pre_num_fire:
-                message += f"화재가 {num_fire}곳 에서 발견 되었습니다.\n지금 바로 확인 바랍니다\n"
-                pre_num_fire = num_fire
 
-        if message:
-            bot.send_message(chat_id, text=message)
-    
-    def callback(msg):
-        
-        global cv2_img
-        try:
-            #msg = rospy.wait_for_message("/usb_cam/image_raw", Image)
-            #cv2_img = bridge.imgmsg_to_cv2(msg, "bgr8")
-            cv2_img1 = np.frombuffer(msg.data, dtype=np.uint8).reshape(msg.height, msg.width, -1)
-            cv2_img = cv2.cvtColor(cv2_img1, cv2.COLOR_RGB2BGR)
-            
-        except CvBridgeError as e:
-            print(e)
-    image_topic = "/usb_cam/image_raw"
+@app.post("/offer")
+async def offer(params: Offer):
+    offer = RTCSessionDescription(sdp=params.sdp, type=params.type)
 
-    threading.Thread(target=lambda: rospy.init_node('image_listener', disable_signals=True)).start()
+    pc = RTCPeerConnection()
+    pcs.add(pc)
+    recorder = MediaBlackhole()
 
-    rospy.Subscriber(image_topic, Image, callback)  
-    while True:   
-        global cv2_img
-        
-        frame = cv2_img       
-        frame_num += 1
-        if frame is None:
-            break
-        else:
-            results = model(frame)
-            annotated_frame = results.render()
-            ret, buffer = cv2.imencode('.jpg', frame)
-            frame = buffer.tobytes()
+    @pc.on("connectionstatechange")
+    async def on_connectionstatechange():
+        print("Connection state is %s" % pc.connectionState)
+        if pc.connectionState == "failed":
+            await pc.close()
+            pcs.discard(pc)
 
-            if results and results.pandas().xyxy[0] is not None:
-                resulting_json = json.loads(results.pandas().xyxy[0].to_json(orient="records"))
-                num_persons = len([d for d in resulting_json if d["confidence"] >= 0.75 and d["name"] == "person"]) #사람은 기준점 75%를 넘어야 문자
-                num_smoke = len([d for d in resulting_json if d["name"] == "smoke"]) # 연기는 기준점없이 문자 알람
-                num_fire = len([d for d in resulting_json if d["name"] == "fire"])  # 불 도 기준점 없이 문자 알람 
+    # open media source
+    audio, video = create_local_tracks()
 
-                await print_message(frame_num)
+    # handle offer
+    await pc.setRemoteDescription(offer)
+    await recorder.start()
 
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+    # send answer
+    answer = await pc.createAnswer()
 
-        # print(results.pandas().xyxy[0].to_json(orient="records")) 
+    await pc.setRemoteDescription(offer)
+    for t in pc.getTransceivers():
+        if t.kind == "audio" and audio:
+            pc.addTrack(audio)
+        elif t.kind == "video" and video:
+            pc.addTrack(video)
 
-# 비디오 스트리밍 페이지?
-@app.get('/video')
-def video():
-    return StreamingResponse(gen_frames(), media_type="multipart/x-mixed-replace; boundary=frame")
+    await pc.setLocalDescription(answer)
 
-if __name__ == '__main__':
-    FastAPI.run(app)
+    return {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}
+
+
+@app.post("/offer_cv")
+async def offer(params: Offer):
+    offer = RTCSessionDescription(sdp=params.sdp, type=params.type)
+
+    pc = RTCPeerConnection()
+    pcs.add(pc)
+    recorder = MediaBlackhole()
+
+    relay = MediaRelay()
+
+    @pc.on("connectionstatechange")
+    async def on_connectionstatechange():
+        print("Connection state is %s" % pc.connectionState)
+        if pc.connectionState == "failed":
+            await pc.close()
+            pcs.discard(pc)
+
+    # open media source
+    # audio, video = create_local_tracks()
+
+    @pc.on("track")
+    def on_track(track):
+
+        # if track.kind == "audio":
+        #     pc.addTrack(player.audio)
+        #     recorder.addTrack(track)
+        if track.kind == "video":
+            pc.addTrack(
+                VideoTransformTrack(relay.subscribe(track), transform=params.video_transform)
+            )
+            # if args.record_to:
+            #     recorder.addTrack(relay.subscribe(track))
+
+        @track.on("ended")
+        async def on_ended():
+            await recorder.stop()
+
+    # handle offer
+    await pc.setRemoteDescription(offer)
+    await recorder.start()
+
+    # send answer
+    answer = await pc.createAnswer()
+    await pc.setRemoteDescription(offer)
+    await pc.setLocalDescription(answer)
+
+    return {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}
+
+
+pcs = set()
+args = ''
+
+
+@app.on_event("shutdown")
+async def on_shutdown():
+    # close peer connections
+    coros = [pc.close() for pc in pcs]
+    await asyncio.gather(*coros)
+    pcs.clear()
