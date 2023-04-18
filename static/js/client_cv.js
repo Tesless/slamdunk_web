@@ -162,14 +162,6 @@ function start() {
         }
     }
 
-    const constraints = {
-        audio: true,
-        video: {
-          width: { exact: 640 },
-          height: { exact: 480 }
-        }
-      };
-
     if (constraints.audio || constraints.video) {
         if (constraints.video) {
             document.getElementById('media').style.display = 'block';
