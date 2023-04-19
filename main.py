@@ -105,10 +105,6 @@ class VideoTransformTrack(MediaStreamTrack):
             for (x, y, w, h) in eye:
                 cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-            # smile = smiles.detectMultiScale(img, 1.1, 19)
-            # for (x, y, w, h) in smile:
-            #     cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 5), 2)
-
             new_frame = VideoFrame.from_ndarray(img, format="bgr24")
             new_frame.pts = frame.pts
             new_frame.time_base = frame.time_base
@@ -123,20 +119,7 @@ def create_local_tracks(play_from=None):
         return player.audio, player.video
     else:
         options = {"framerate": "30", "video_size": "640x480"}
-        # if relay is None:
-            # if platform.system() == "Darwin":
-            # webcam = MediaPlayer(
-            #     "default:none", format="avfoundation", options=options
-            # )
-            # elif platform.system() == "Windows":
-            # webcam = MediaPlayer("video.mp4")
-        # webcam = MediaPlayer(
-        #     "video=FULL HD 1080P Webcam", format="dshow", options=options
-        # )
-
-
-            # else:
-        webcam = MediaPlayer("/dev/video0", format="v4l2", options=options)
+        webcam = MediaPlayer("/dev/video1", format="v4l2", options=options)
             # audio, video = VideoTransformTrack(webcam.video, transform="cv")
         relay = MediaRelay()
         return None, relay.subscribe(webcam.video)
@@ -209,22 +192,15 @@ async def offer(params: Offer):
             await pc.close()
             pcs.discard(pc)
 
-    # open media source
-    # audio, video = create_local_tracks()
-
+   
     @pc.on("track")
     def on_track(track):
 
-        # if track.kind == "audio":
-        #     pc.addTrack(player.audio)
-        #     recorder.addTrack(track)
         if track.kind == "video":
             pc.addTrack(
                 VideoTransformTrack(relay.subscribe(track), transform=params.video_transform)
             )
-            # if args.record_to:
-            #     recorder.addTrack(relay.subscribe(track))
-
+            
         @track.on("ended")
         async def on_ended():
             await recorder.stop()
