@@ -25,11 +25,12 @@ import threading
 app = FastAPI() # Fastapi 실행 app 으로 변수 지정 
 templates = Jinja2Templates(directory="templates") # 템플릿 디렉토리 지정
 app.mount("/static", StaticFiles(directory="static"), name="static") # 파일 저장공간 지정
+bridge = CvBridge() # ?
+cv2_img = np.zeros((480, 640, 3), np.uint8) # cv2_img 화면 크기?
 
 # 학습시킨 모델 불러오기 및 경로(yolov5, best.pt(학습데이터))
 model = torch.hub.load('/home/tesless/slamdunk/yolov5/', 'custom','/home/tesless/slamdunk/0403_custom/exp/weights/best.pt', 
                        source='local', device='cpu', force_reload=True)
-
 
 def gen_frames():
     pre_num_persons = 0 # 이전 비디오에서 발견된 사람 수를 저장할 변수 초기화
@@ -103,7 +104,6 @@ def gen_frames():
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
         # print(results.pandas().xyxy[0].to_json(orient="records")) 
-
 
 
 # 혜진님 텔레그램 정보
