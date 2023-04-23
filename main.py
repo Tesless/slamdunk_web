@@ -11,11 +11,11 @@ from aiortc.contrib.media import MediaPlayer, MediaRelay, MediaBlackhole
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-
+from bson.json_util import dumps
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
 from starlette.templating import Jinja2Templates
-
+from pymongo import MongoClient
 from src.schemas import Offer
 
 # 현재 스크립트 파일의 디렉토리 경로를 변수 ROOT에 저장합니다.
@@ -32,6 +32,15 @@ templates = Jinja2Templates(directory="templates")
 faces = cv2.CascadeClassifier(cv2.data.haarcascades+"haarcascade_frontalface_default.xml")
 eyes = cv2.CascadeClassifier(cv2.data.haarcascades+"haarcascade_eye.xml")
 smiles = cv2.CascadeClassifier(cv2.data.haarcascades+"haarcascade_smile.xml")
+
+# MongoDB에 접속
+client = MongoClient("mongodb+srv://tesless:123@cluster0.xyeyaz7.mongodb.net/test")
+
+# 데이터베이스 선택
+db = client["test"]
+
+# 컬렉션 선택
+collection = db["dw"]
 
 #MediaStreamTrack 클래스를 상속하여 비디오 스트림을 변환하는 커스텀 비디오 스트림 트랙 클래스를 정의합니다.
 class VideoTransformTrack(MediaStreamTrack):
@@ -147,7 +156,13 @@ async def index(request: Request):
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request):
-    return templates.TemplateResponse("dashboard.html",{"request": request}) # 대시보드 페이지를 반환하는 코드
+    return templates.TemplateResponse("dashboard2.html",{"request": request}) # 대시보드 페이지를 반환하는 코드
+
+@app.get("/api/list")
+async def mongodb_data():
+    data = list(collection.find().limit(1).sort("_id", -1))
+    mongodb_data = dumps(data)
+    return {'mongodb_data': mongodb_data}
 
 @app.post("/offer")
 async def offer(params: Offer):

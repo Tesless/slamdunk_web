@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Real-time data from MongoDB</title>
+        <script>
+            var socket = new WebSocket("ws://localhost:8000/ws");
+            socket.onmessage = function(event) {
+                var data = JSON.parse(event.data);
+                document.getElementById("data").innerHTML = data;
+            };
+        </script>
+    </head>
+    <body>
+        <div id="data"></div>
+    </body>
+</html>

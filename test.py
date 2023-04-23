@@ -21,12 +21,24 @@ import numpy as np
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image
 import threading
+from pymongo import MongoClient
+from bson.json_util import dumps
 
 app = FastAPI() # Fastapi 실행 app 으로 변수 지정 
 templates = Jinja2Templates(directory="templates") # 템플릿 디렉토리 지정
 app.mount("/static", StaticFiles(directory="static"), name="static") # 파일 저장공간 지정
-bridge = CvBridge() # ?
+# bridge = CvBridge() # ?
 cv2_img = np.zeros((480, 640, 3), np.uint8) # cv2_img 화면 크기?
+
+
+# MongoDB에 접속
+client = MongoClient("mongodb+srv://tesless:123@cluster0.xyeyaz7.mongodb.net/test")
+
+# 데이터베이스 선택
+db = client["test"]
+
+# 컬렉션 선택
+collection = db["dw"]
 
 # 학습시킨 모델 불러오기 및 경로(yolov5, best.pt(학습데이터))
 model = torch.hub.load('/home/tesless/slamdunk/yolov5/', 'custom','/home/tesless/slamdunk/0403_custom/exp/weights/best.pt', 
@@ -115,9 +127,14 @@ async def read_item(request: Request):
 	return templates.TemplateResponse("index.html", {"request": request}) 
 
 @app.get("/dashboard", response_class=HTMLResponse)
-def dashboard(request: Request):
+async def dashboard(request: Request):
     return templates.TemplateResponse("dashboard2.html",{"request": request})
 
+@app.get("/api/list")
+async def mongodb_data():
+    data = list(collection.find().limit(1).sort("_id", -1))
+    return {"motor_states_rpm":data[0]["motor_states_rpm"],"TimeStamp":data[0]["TimeStamp"],"linear_velocity":data[0]["linear_velocity"],
+            "angular_velocity":data[0]["angular_velocity"],"motor_states_temperature":data[0]["motor_states_temperature"]}
 
 # 비디오 스트리밍 페이지?
 @app.get('/video')

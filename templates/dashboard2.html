@@ -10,8 +10,54 @@
     <title>Slamdunk Project</title>
 
     <link rel="canonical" href="{{ url_for('static', path='/cover/')}}">
+    <script>
+// 데이터 업데이트 함수
+function updateData() {
+  // XMLHttpRequest 객체 생성
+  var xhr = new XMLHttpRequest();
 
-    
+  // 요청 완료시 실행될 함수 지정
+  xhr.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      // 서버에서 받은 JSON 데이터를 JavaScript 객체로 변환
+      // var data = JSON.parse(this.responseText);
+      var data = JSON.parse(this.responseText);
+      console.log(data.motor_states_rpm);
+      // 데이터 처리 코드 작성
+      // 예시) battery_voltage 값을 화면에 출력
+      document.getElementById("motor_states_rpm").innerHTML = data.motor_states_rpm;
+      document.getElementById("TimeStamp").innerHTML = data.TimeStamp;
+      document.getElementById("linear_velocity").innerHTML = data.linear_velocity;
+      document.getElementById("angular_velocity").innerHTML = data.angular_velocity;
+      document.getElementById("motor_states_temperature").innerHTML = data.motor_states_temperature;
+    }
+  };
+
+  // 데이터를 가져올 API 주소 설정
+  var url = "/api/list";
+
+  // 요청 보내기
+  xhr.open("GET", url, true);
+  xhr.send();
+}
+
+// 일정 시간 간격으로 updateData 함수 실행
+setInterval(updateData, 1000); // 1초 간격으로 실행
+  </script>
+
+<!--
+      setInterval(function(){$.ajax({
+        url: '/update',
+        type:  'POST',
+        success: function(response) {
+          console.log(response);
+          $("#mongodb_name").html(response["battery_voltage"]);
+        },
+        error: function(error) {
+          console.log(error);
+        }
+      })}, 1000);
+    </script>     -->
 
     
 
@@ -167,7 +213,7 @@
       <div class="row align-items-center">
         <div class="col-5">
           <h1>Cam Monitoring</h1>
-          <img src="{{ url_for ('video')}}" width="640" height="480">
+          <!-- <img src="{{ url_for ('video')}}" width="640" height="480"> -->
         </div>
         <div class="col-1">
         </div>
@@ -175,19 +221,23 @@
           <div class="row">
             <div class="col">
               <table class="table-dark">RPM</table>
-              <tr class="table-dark">RPM</tr>
+              <p><span id="motor_states_rpm"></span></p>
             </div>
             <div class="col">
-              2
+              <table class="table-dark">TimeStamp</table>
+              <p><span id="TimeStamp"></span></p>
             </div>
             <div class="col">
-              3
+              <table class="table-dark">linear_velocity</table>
+              <p><span id="linear_velocity"></span></p>
             </div>
             <div class="col">
-              4
+              <table class="table-dark">angular_velocity</table>
+              <p><span id="angular_velocity"></span></p>
             </div>
             <div class="col">
-              5
+              <table class="table-dark">temperature</table>
+              <p><span id="motor_states_temperature"></span></p>
             </div>
           </div>
           <div class="row">
