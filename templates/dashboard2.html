@@ -12,6 +12,7 @@
     <link rel="canonical" href="{{ url_for('static', path='/cover/')}}">
     <script>
 // 데이터 업데이트 함수
+var mongo_data ={};
 function updateData() {
   // XMLHttpRequest 객체 생성
   var xhr = new XMLHttpRequest();
@@ -21,15 +22,15 @@ function updateData() {
     if (this.readyState == 4 && this.status == 200) {
       // 서버에서 받은 JSON 데이터를 JavaScript 객체로 변환
       // var data = JSON.parse(this.responseText);
-      var data = JSON.parse(this.responseText);
-      console.log(data.motor_states_rpm);
+      mongo_data = JSON.parse(this.responseText);
+      console.log("Data를 받아왔습니다.",mongo_data.TimeStamp);
       // 데이터 처리 코드 작성
       // 예시) battery_voltage 값을 화면에 출력
-      document.getElementById("motor_states_rpm").innerHTML = data.motor_states_rpm;
-      document.getElementById("TimeStamp").innerHTML = data.TimeStamp;
-      document.getElementById("linear_velocity").innerHTML = data.linear_velocity;
-      document.getElementById("angular_velocity").innerHTML = data.angular_velocity;
-      document.getElementById("motor_states_temperature").innerHTML = data.motor_states_temperature;
+      // document.getElementById("motor_states_rpm").innerHTML = mongo_data.motor_states_rpm;
+      document.getElementById("TimeStamp").innerHTML = mongo_data.TimeStamp;
+      document.getElementById("linear_velocity").innerHTML = mongo_data.linear_velocity;
+      document.getElementById("angular_velocity").innerHTML = mongo_data.angular_velocity;
+      // document.getElementById("motor_states_temperature").innerHTML = mongo_data.motor_states_temperature;
     }
   };
 
@@ -41,6 +42,7 @@ function updateData() {
   xhr.send();
 }
 
+    
 // 일정 시간 간격으로 updateData 함수 실행
 setInterval(updateData, 1000); // 1초 간격으로 실행
   </script>
@@ -59,7 +61,59 @@ setInterval(updateData, 1000); // 1초 간격으로 실행
       })}, 1000);
     </script>     -->
 
-    
+    <!-- RPM 표만들기 -->
+    <script type="text/javascript" src="{{ url_for('static', path='/js/loader.js')}}"></script>
+    <script type="text/javascript">google.charts.load('current', {packages: ['corechart', 'line']});
+      google.charts.load('current', {'packages':['gauge']});
+      google.charts.setOnLoadCallback(drawChart);
+
+      function drawChart() {
+        // 1번재 차트
+        var data = google.visualization.arrayToDataTable([
+          ['Label', 'Value'],
+          ['RPM', 0],
+        ]);
+
+        var options = {
+          width: 400, height: 120,
+          redFrom: 450, redTo: 500,
+          yellowFrom:375, yellowTo: 450,
+          minorTicks: 10, max :500
+        };
+
+        var chart = new google.visualization.Gauge(document.getElementById('chart_div'));
+
+        chart.draw(data, options);
+
+        setInterval(function() {
+          data.setValue(0, 1, mongo_data.motor_states_rpm);
+          chart.draw(data, options);
+        }, 1000);
+
+        // 2번째 차트
+        var data2 = google.visualization.arrayToDataTable([
+          ['Label', 'Value'],
+          ['Temperature', 0],
+        ]);
+
+        var options2 = {
+          width: 400, height: 120,
+          redFrom: 90, redTo: 100,
+          yellowFrom:75, yellowTo: 90,
+          minorTicks: 5
+        };
+
+        var chart2 = new google.visualization.Gauge(document.getElementById('chart_div2'));
+
+        chart2.draw(data2, options2);
+
+        setInterval(function() {
+          data2.setValue(0, 1, mongo_data.motor_states_temperature);
+          chart2.draw(data2, options2);
+        }, 1000);
+
+      }
+          </script>
 
 <link href="{{ url_for('static', path='/css/bootstrap.min.css')}}" rel="stylesheet">
 <link href="{{ url_for('static', path='/cover/cover.css')}}" rel="stylesheet">
@@ -203,7 +257,7 @@ setInterval(updateData, 1000); // 1초 간격으로 실행
       <nav class="nav nav-masthead justify-content-center float-md-end">
         <a class="nav-link fw-bold py-1 px-0" aria-current="page" href="/">Home</a>
         <a class="nav-link fw-bold py-1 px-0 active" href="#">Dash Board</a>
-        <a class="nav-link fw-bold py-1 px-0" href="#">Tesla</a>
+        <a class="nav-link fw-bold py-1 px-0" href="http://lcm7644.asuscomm.com:8000/">Tesla</a>
       </nav>
     </div>
   </header>
@@ -213,19 +267,20 @@ setInterval(updateData, 1000); // 1초 간격으로 실행
       <div class="row align-items-center">
         <div class="col-5">
           <h1>Cam Monitoring</h1>
-          <!-- <img src="{{ url_for ('video')}}" width="640" height="480"> -->
+          <img src="{{ url_for ('video')}}" width="640" height="480">
         </div>
         <div class="col-1">
         </div>
         <div class="col-6">
+          
+          
           <div class="row">
+            
             <div class="col">
-              <table class="table-dark">RPM</table>
-              <p><span id="motor_states_rpm"></span></p>
+              <div id="chart_div" style="width: 108px; height: 108px;"></div>
             </div>
             <div class="col">
-              <table class="table-dark">TimeStamp</table>
-              <p><span id="TimeStamp"></span></p>
+              <div id="chart_div2" style="width: 108px; height: 108px;"></div>
             </div>
             <div class="col">
               <table class="table-dark">linear_velocity</table>
@@ -236,8 +291,9 @@ setInterval(updateData, 1000); // 1초 간격으로 실행
               <p><span id="angular_velocity"></span></p>
             </div>
             <div class="col">
-              <table class="table-dark">temperature</table>
-              <p><span id="motor_states_temperature"></span></p>
+              <table class="table-dark">TimeStamp</table>
+              <p><span id="TimeStamp"></span></p>
+
             </div>
           </div>
           <div class="row">
