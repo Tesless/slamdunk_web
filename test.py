@@ -1,3 +1,4 @@
+from geometry_msgs.msg import Twist
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -7,7 +8,7 @@ from fastapi import FastAPI
 import io
 import json
 from PIL import Image
-from fastapi import File, FastAPI, Response
+from fastapi import File, FastAPI, Response, Form
 import torch
 import cv2
 from fastapi import Request
@@ -23,8 +24,22 @@ from sensor_msgs.msg import Image
 import threading
 from pymongo import MongoClient
 from bson.json_util import dumps
-import pandas
 import asyncio
+import manual
+from time import sleep
+import sys
+import select
+import tty
+import termios
+import smach_ros
+import os
+from smach import State, StateMachine
+import actionlib
+from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
+import subprocess
+import pymongo
+import manual
+
 
 app = FastAPI()  # Fastapi 실행 app 으로 변수 지정
 templates = Jinja2Templates(directory="templates")  # 템플릿 디렉토리 지정
@@ -33,7 +48,8 @@ app.mount("/static", StaticFiles(directory="static"),
 # bridge = CvBridge() # ?
 cv2_img = np.zeros((480, 640, 3), np.uint8)  # cv2_img 화면 크기?
 
-
+twist = Twist()
+pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
 # MongoDB에 접속
 client = MongoClient(
     "mongodb+srv://tesless:123@cluster0.xyeyaz7.mongodb.net/test")
@@ -44,9 +60,38 @@ db = client["slamdunk"]
 # 컬렉션 선택
 collection = db["status"]
 collection2 = db["data"]
+
 # 학습시킨 모델 불러오기 및 경로(yolov5, best.pt(학습데이터))
 model = torch.hub.load('/home/tesless/slamdunk/yolov5/', 'custom', '/home/tesless/slamdunk/0403_custom/exp/weights/best.pt',
                        source='local', device='cpu', force_reload=True)
+
+
+def isData():
+    # 문자열을 읽을 수 있는 함수
+    return select.select([sys.stdin], [], [], 0) == ([sys.stdin], [], [])
+
+
+# original
+# waypoints = [
+#         ['one', (1.1, 0.5), (0.0, 0.0, 0.0, 1.0)],
+#         ['two', (2.1, 4.43), (0.0, 0.0, -0.984047240305, 0.177907360295)],
+#         ['three', (-1.3, 4.4), (0.0, 0.0, 0.0, 1.0)],
+#         ['four', (-1.3, 0.1), (0.0, 0.0, 0.0, 1.0)]
+#     ]
+
+# second
+waypoints = [
+    ['one', (2.64499974251, 0.509999752045),
+     (0.0, 0.0, 0.707106796641, 0.707106765732)],
+    ['two', (2.47258925438, 4.40223407745),
+     (0.0, 0.0, 0.999878011069, -0.0156193143396)],
+    ['three', (-1.40137755871, 4.37288618088),
+     (0.0, 0.0, -0.703452686599, 0.71074208945)],
+    ['four', (-1.32800757885, 0.0733705535531),
+     (0.0, 0.0, 0.0142813322057, 0.999898016575)]
+]
+
+roslaunch_process = None
 
 
 async def send_msg(text):  # 혜진 텔레그램 정보
@@ -191,6 +236,83 @@ async def read_item(request: Request):
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request):
     return templates.TemplateResponse("dashboard2.html", {"request": request})
+
+
+@app.post("/stop")
+async def stop():
+    twist.linear.x = 0.0
+    twist.angular.z = 0.0
+    pub.publish(twist)
+    manual.db_save("stop")
+    return print("stop")
+
+
+@app.post("/up")
+async def up():
+    twist.linear.x = 0.2
+    twist.angular.z = 0.0
+    pub.publish(twist)
+    return print("up")
+
+
+@app.post("/down")
+async def down():
+    twist.linear.x = -0.2
+    twist.angular.z = 0.0
+    pub.publish(twist)
+    return print("down")
+
+
+@app.post("/left")
+async def left():
+    twist.linear.x = 0.0
+    twist.angular.z = 1.0
+    pub.publish(twist)
+    return print("left")
+
+
+@app.post("/right")
+async def right():
+    twist.linear.x = 0.0
+    twist.angular.z = -1.0
+    pub.publish(twist)
+    return print("right")
+
+
+@app.post("/one")
+async def one():
+    twist.linear.x = 0.0
+    twist.angular.z = 0.0
+    pub.publish(twist)
+    manual.db_save("one")
+    return print("one")
+
+
+@app.post("/two")
+async def two():
+    twist.linear.x = 0.0
+    twist.angular.z = 0.0
+    pub.publish(twist)
+    manual.db_save("two")
+    return print("two")
+
+
+@app.post("/three")
+async def three():
+    twist.linear.x = 0.0
+    twist.angular.z = 0.0
+    pub.publish(twist)
+    manual.db_save("three")
+    return print("three")
+
+
+@app.post("/four")
+async def four():
+    twist.linear.x = 0.0
+    twist.angular.z = 0.0
+    pub.publish(twist)
+    manual.db_save("four")
+    return print("four")
 
 
 @app.get("/api/list")
